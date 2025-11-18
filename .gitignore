@@ -10,7 +10,7 @@
 
 # testing
 /frontend/coverage
-
+.idea
 # next.js
 /frontend/.next/
 /frontend/out/
