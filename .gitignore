@@ -7,7 +7,7 @@
 /frontend/.yarn/plugins
 /frontend/.yarn/releases
 /frontend/.yarn/versions
-ssl
+
 # testing
 /frontend/coverage
 .idea
