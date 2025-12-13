@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from app.services.text_service import TextService
 from functools import lru_cache
 
 router = APIRouter(prefix="/v1/text", tags=["Text AI"])
 
 class TextRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=10_000, strip_whitespace=True)
+    model_config = ConfigDict(str_strip_whitespace=True)
+    text: str = Field(..., min_length=1, max_length=10_000)
 
 
 @lru_cache
