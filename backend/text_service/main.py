@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes.endpoints import router as text_router  # або твій файл
+from routes.endpoints import router as text_router
 
 app = FastAPI()
 

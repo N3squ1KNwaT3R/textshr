@@ -39,21 +39,27 @@ class MinioClient:
 
     def delete(self, object_name: str) -> bool:
         try:
-            if not self._exists(object_name):
-                return False
-
-            self.client.remove_object(self.bucket, object_name)
-            logger.info(f"DELETE {object_name}")
-            return True
+            exist = self._exists(object_name)
+            if exist:
+                self.client.remove_object(self.bucket, object_name)
+                logger.info(f"DELETE {object_name}")
+                return True
+            return False
 
         except Exception as e:
             raise Exception(f"Minio DELETE error object_name={object_name}: {e}")
 
     def update(self, object_name: str, data: bytes) -> bool:
-        if not self._exists(object_name):
+        try:
+            exist = self._exists(object_name)
+            if exist:
+                self.set(object_name, data)
+                logger.info(f"UPDATE {object_name}")
+                return True
             return False
-        self.set(object_name, data)
-        return True
+
+        except Exception as e:
+            raise Exception(f"Minio UPDATE error object_name={object_name}: {e}")
 
     def _exists(self, object_name: str) -> bool:
         try:
