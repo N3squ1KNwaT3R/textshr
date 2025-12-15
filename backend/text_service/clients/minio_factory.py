@@ -1,8 +1,9 @@
 from minio import Minio
-from ..config import MinioSettings
+from ..config import minio_settings
+
 
 def create_minio_client() -> Minio:
-    settings = MinioSettings()
+    settings = minio_settings
 
     client = Minio(
         endpoint=settings.MINIO_ENDPOINT,

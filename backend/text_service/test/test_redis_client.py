@@ -11,10 +11,11 @@ def redis_mock():
     mock.connection_pool = AsyncMock()
     return mock
 
+
 @pytest.fixture
 def client(redis_mock):
-    # патчимо create_RedisSettings, щоб він повертав мок замість реального Redis
-    with patch("backend.text_service.clients.redis_client.create_RedisSettings", return_value=redis_mock):
+    # Патчимо create_redis_client, щоб RedisClient використовував мок
+    with patch("backend.text_service.clients.redis_client.create_redis_client", return_value=redis_mock):
         yield RedisClient()
 
 
@@ -22,7 +23,9 @@ def client(redis_mock):
 async def test_set_success(client, redis_mock):
     redis_mock.set.return_value = True
     await client.set("key1", {"a": 1}, ttl=60)
-    redis_mock.set.assert_awaited_once_with(name="key1", value=json.dumps({"a": 1}), ttl=60)
+    redis_mock.set.assert_awaited_once_with(
+        name="key1", value=json.dumps({"a": 1}), ex=60
+    )
 
 
 @pytest.mark.asyncio
@@ -49,7 +52,9 @@ async def test_update_existing_key(client, redis_mock):
     result = await client.update("key3", {"val": 1}, ttl=30)
     redis_mock.exists.assert_awaited_once_with("key3")
     redis_mock.delete.assert_awaited_once_with("key3")
-    redis_mock.set.assert_awaited_once_with(name="key3", value={"val": 1}, ttl=30)
+    redis_mock.set.assert_awaited_once_with(
+        name="key3", value=json.dumps({"val": 1}), ex=30
+    )
     assert result is True
 
 
