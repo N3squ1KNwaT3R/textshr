@@ -25,5 +25,15 @@ class MinioSettings(BaseSettings):
         extra = "ignore"
 
 
+# class AppSettings(BaseSettings):  # ⚠️ ДОДАЙ ЦЕ
+#     SIZE_THRESHOLD: int = 10240  # 10 KB в байтах
+#
+#     class Config:
+#         env_file = ".env"
+#         env_file_encoding = "utf-8"
+#         extra = "ignore"
+#
+
 redis_settings = RedisSettings()
 minio_settings = MinioSettings()
+# app_settings = AppSettings()  # ⚠️ ДОДАЙ ЦЕ

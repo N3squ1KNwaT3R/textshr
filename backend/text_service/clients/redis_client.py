@@ -2,14 +2,14 @@ import json
 import logging
 from typing import Optional
 
-from .redis_factory import create_RedisSettings
+from .redis_factory import create_redis_client
 
 logger = logging.getLogger(__name__)
 
 
 class RedisClient:
     def __init__(self):
-        self.redis = create_RedisSettings()
+        self.redis = create_redis_client()
 
     async def __aenter__(self):
         return self
@@ -20,18 +20,20 @@ class RedisClient:
     async def set(self, key: str, value: dict, ttl: Optional[int] = None):
         data = json.dumps(value)
         try:
-            await self.redis.set(name=key, value=data, ttl=ttl )
+            await self.redis.set(name=key, value=data, ex=ttl)
             logger.info(f"SET {key} -> {data}")
         except Exception as e:
             raise Exception(f"Redis SET error key={key}: {e}")
 
-    async def get(self, key: str) -> dict:
+    async def get(self, key: str) -> Optional[dict]:
         try:
             data = await self.redis.get(key)
+            if data is None:
+                logger.info(f"GET key={key} -> NOT FOUND")
+                return None
             logger.info(f"GET key={key}")
             data = json.loads(data)
             return data
-
         except Exception as e:
             raise Exception(f"Redis GET error key={key}: {e}")
 
@@ -40,13 +42,13 @@ class RedisClient:
             exists = await self._exists(key)
             if exists:
                 await self.redis.delete(key)
-                await self.redis.set(name=key, value=value, ttl=ttl)
-                logger.info(f"UPDATE {key} -> {value}")
+                data = json.dumps(value)
+                await self.redis.set(name=key, value=data, ex=ttl)
+                logger.info(f"UPDATE {key} -> {data}")
                 return True
             return False
         except Exception as e:
             raise Exception(f"Redis UPDATE error key={key}: {e}")
-
 
     async def delete(self, key: str):
         try:
@@ -64,7 +66,7 @@ class RedisClient:
         try:
             exists = await self.redis.exists(key)
             logger.info(f"EXISTS key={key} exists={exists}")
-            return exists
+            return bool(exists)
 
         except Exception as e:
             raise Exception(f"Redis EXISTS error key={key}: {e}")
@@ -73,7 +75,7 @@ class RedisClient:
         try:
             response = await self.redis.ping()
             logger.info(f"PING success={response}")
-            return True if response == "PONG" else False
+            return response in (True, "PONG", b"PONG")
 
         except Exception as e:
             logger.error(f"Redis PING failed: {e}")
