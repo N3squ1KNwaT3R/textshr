@@ -66,3 +66,12 @@ class RedisClient:
             logger.info("Redis connection closed")
         except Exception as e:
             logger.error(f"Redis close error: {e}")
+
+    async def expire(self, key: str, ttl: int) -> bool:
+        try:
+            result = await self.client.expire(key, ttl)
+            logger.info(f"Redis expire {key} -> {ttl}")
+            return result
+        except Exception as e:
+            logger.error(f"Redis expire error: {e}")
+            return False
