@@ -84,6 +84,6 @@ class RedisClient:
     async def close(self):
         await self.redis.close()
         await self.redis.connection_pool.disconnect()
-        logger.info("Close Redis connection
+        logger.info("Close Redis connection")
 
 text_client = RedisClient()
