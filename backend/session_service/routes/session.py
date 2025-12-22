@@ -33,7 +33,7 @@ async def create_session(response: Response):
 
 
 
-@router.post("/session_refresh", status_code=status.HTTP_200_CREATED)
+@router.post("/session_refresh", status_code=status.HTTP_200_OK)
 async def session_refresh(request: Request):
     session_id = request.cookies.get("session")
     if session_id is None:
@@ -44,7 +44,7 @@ async def session_refresh(request: Request):
     )
     return {"status":"refreshed"}
 
-@router.post("/session_validate", status_code=status.HTTP_200_ACCEPTED)
+@router.post("/session_validate", status_code=status.HTTP_200_OK)
 async def session_validate(request: Request):
     session_id = request.cookies.get("session")
     if session_id is None:
