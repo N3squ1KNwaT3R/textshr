@@ -1,8 +1,12 @@
 from pydantic import BaseModel
-class SessionCreateResponse(BaseModel):
+class BaseResponse(BaseModel):
     status: str
+class SessionCreateResponse(BaseResponse):
     session_id: str
-class SessionRefreshResponse(BaseModel):
-    status: str
-class SessionValidateResponse(BaseModel):
-    status: str
+class SessionRefreshResponse(BaseResponse):
+    pass
+class SessionValidateResponse(BaseResponse):
+    pass
+
+
+
