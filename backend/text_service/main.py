@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes.endpoints import router as text_router
+from crud.text_crud import router_text as text_router
 
 app = FastAPI()
 

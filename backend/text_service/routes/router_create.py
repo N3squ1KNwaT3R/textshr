@@ -1,3 +1,3 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/api/text", tags=["text"])
+router_text = APIRouter(prefix="/api/text", tags=["text"])
