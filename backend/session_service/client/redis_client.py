@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Optional
 from functools import lru_cache
-from client.redis_factory import create_redis_client
+from .redis_factory import create_redis_client
 
 logger = logging.getLogger(__name__)
 
