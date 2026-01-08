@@ -86,4 +86,4 @@ class RedisClient:
         await self.redis.connection_pool.disconnect()
         logger.info("Close Redis connection")
 
-text_client = RedisClient()
+redis_client = RedisClient()

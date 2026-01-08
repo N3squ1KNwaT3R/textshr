@@ -22,3 +22,6 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.verify(plain_password, hashed_password)
+
+def text_size(text: str) -> int:
+    return len(text.encode("utf-8"))
