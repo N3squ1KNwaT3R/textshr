@@ -60,15 +60,22 @@ services:
     restart: unless-stopped
 
 
+
   session_service:
-    build: ./backend/session_service
-    image: session_service
-    container_name: session
-    depends_on:
-      - redis
-    ports:
-      - "127.0.0.1:8003:8000"
-    restart: unless-stopped
+      build: ./backend/session_service
+      image: session_service
+      container_name: session
+      environment:
+        - REDIS_HOST=redis
+        - REDIS_PORT=6379
+        - REDIS_PASSWORD=redis
+        - REDIS_DB=0
+      depends_on:
+        - redis
+      ports:
+        - "127.0.0.1:8003:8000"
+      restart: unless-stopped
+
 
   ai_service:
     build: ./backend/ai_service

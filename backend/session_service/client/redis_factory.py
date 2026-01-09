@@ -11,6 +11,3 @@ def create_redis_client():
         decode_responses=True
 
     )
-
-
-
