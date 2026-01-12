@@ -124,10 +124,7 @@ class StorageService:
 
         redis_data = await self.redis_service.get_from_redis(key)
 
-        if not redis_data:
-            return False
-
-        if redis_data['creator'] != creator:
+        if not redis_data or redis_data['creator'] != creator:
             return False
 
         await self._delete_text_data(key, redis_data)
