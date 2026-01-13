@@ -1,7 +1,7 @@
 import time
 import logging
-from session_service.client.redis_client import RedisClient
-from ..utils.utils import generate_uuid
+from client.redis_client import RedisClient
+from utils.utils import generate_uuid
 from fastapi import Request, HTTPException, status
 logger = logging.getLogger(__name__)
 redis_client = RedisClient()
