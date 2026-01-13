@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
 from services import storage_service
 from schemas.text import (
     TextCreateRequest,
@@ -13,8 +13,9 @@ router_text = APIRouter()
 
 
 @router_text.post("/", response_model=TextCreateResponse, status_code=status.HTTP_201_CREATED)
-async def create_text(data: TextCreateRequest):
+async def create_text(data: TextCreateRequest, request: Request):
     creator = "mock_user_cookie"
+    print(data)
     return await storage_service.create_text(data, creator)
 
 

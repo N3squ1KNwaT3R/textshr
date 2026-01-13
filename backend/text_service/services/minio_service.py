@@ -34,8 +34,7 @@ class MinioService:
 
         await self.redis_client.set(
             key,
-            redis_data.model_dump(),
-            ttl=data.ttl
+            redis_data.model_dump()
         )
 
     def get_from_minio(self, key: str) -> bytes:
