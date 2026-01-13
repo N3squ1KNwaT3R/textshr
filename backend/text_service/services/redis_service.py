@@ -1,4 +1,4 @@
-from schemas.text import RedisTextSmall
+from schemas.text import RedisTextSmall, TextCreateRequest
 
 
 class RedisService:
@@ -8,23 +8,20 @@ class RedisService:
     async def save_small_text(
             self,
             key: str,
-            text: str,
+            data: TextCreateRequest,
             creator: str,
             size: int,
-            ttl: int,
-            only_one_read: bool,
-            password: str | None,
-            summary: str | None
+            password: str | None
     ) -> None:
         redis_data = RedisTextSmall(
-            text=text,
+            text=data.text,
             creator=creator,
             size=size,
-            only_one_read=only_one_read,
+            only_one_read=data.only_one_read,
             password=password,
-            summary=summary
+            summary=data.summary
         )
-        await self.redis_client.set(key, redis_data.model_dump(), ttl=ttl)
+        await self.redis_client.set(key, redis_data.model_dump(), ttl=data.ttl)
 
     async def get_from_redis(self, key: str) -> dict | None:
         return await self.redis_client.get(key)

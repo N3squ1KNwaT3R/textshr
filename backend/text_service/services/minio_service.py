@@ -1,4 +1,4 @@
-from schemas.text import RedisTextLarge
+from schemas.text import RedisTextLarge, TextCreateRequest
 import time
 
 
@@ -8,32 +8,35 @@ class MinioService:
         self.redis_client = redis_client
 
     async def save_large_text(
-            self,
-            key: str,
-            text: str,
-            creator: str,
-            size: int,
-            ttl: int,
-            only_one_read: bool,
-            password: str | None,
-            summary: str | None
+        self,
+        key: str,
+        data: TextCreateRequest,
+        creator: str,
+        size: int,
+        password: str | None
     ) -> None:
-        text_bytes = text.encode('utf-8')
+        text_bytes = data.text.encode("utf-8")
         self.minio_client.set(key, text_bytes)
 
         link = f"http://minio:9000/{self.minio_client.bucket}/{key}"
-        expires_at = int(time.time()) + ttl
+        expires_at = int(time.time()) + data.ttl
 
         redis_data = RedisTextLarge(
             link_text=link,
+            text=data.text,
             creator=creator,
             size=size,
-            only_one_read=only_one_read,
+            only_one_read=data.only_one_read,
             password=password,
-            summary=summary,
+            summary=data.summary,
             expiresAt=expires_at
         )
-        await self.redis_client.set(key, redis_data.model_dump(), ttl=ttl)
+
+        await self.redis_client.set(
+            key,
+            redis_data.model_dump(),
+            ttl=data.ttl
+        )
 
     def get_from_minio(self, key: str) -> bytes:
         return self.minio_client.get(key)
