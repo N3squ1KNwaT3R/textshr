@@ -1,8 +1,8 @@
 import logging
 from minio import Minio
 from io import BytesIO
-from .minio_factory import create_minio_client
-from ..config import minio_settings
+from clients.minio_factory import create_minio_client
+from config import minio_settings
 
 logger = logging.getLogger(__name__)
 
