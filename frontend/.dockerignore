@@ -1,0 +1,16 @@
+node_modules
+.next
+dist
+build
+.env
+.env.local
+.env.production
+.DS_Store
+npm-debug.log
+yarn-error.log
+.git
+Dockerfile
+docker-compose.yml
+README.md
+/.vscode
+/.idea
