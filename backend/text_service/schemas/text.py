@@ -5,21 +5,21 @@ from typing import Optional
 class TextCreateRequest(BaseModel):
     text: str = Field(min_length=1)
     ttl: int = Field(gt=0)
-    only_one_read: bool = False
-    password: Optional[str] = Field(None, min_length=1)
+    only_one_read: bool
+    password: Optional[str] = None
     summary: Optional[str] = None
 
 
 class TextUpdateRequest(BaseModel):
     text: str = Field(min_length=1)
     ttl: int = Field(gt=0)
-    only_one_read: bool = False
-    password: Optional[str] = Field(None, min_length=1)
+    only_one_read: bool
+    password: Optional[str] = None
     summary: Optional[str] = None
 
 
 class PasswordVerifyRequest(BaseModel):
-    password: str = Field(min_length=1)
+    password: str
 
 
 class TextCreateResponse(BaseModel):

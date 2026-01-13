@@ -1,7 +1,7 @@
-from ..service_typ import session_logic
+from service_typ import session_logic
 
 from fastapi import APIRouter, status, Response, HTTPException, Request
-from ..utils.utils import generate_cookie, get_session
+from utils.utils import generate_cookie, get_session
 import logging
 
 logger = logging.getLogger(__name__)
