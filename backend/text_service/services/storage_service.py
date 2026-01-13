@@ -32,24 +32,18 @@ class StorageService:
         if text_size < app_settings.SIZE_THRESHOLD:
             await self.redis_service.save_small_text(
                 key=key,
-                text=data.text,
+                data=data,
                 creator=creator,
                 size=text_size,
-                ttl=data.ttl,
-                only_one_read=data.only_one_read,
-                password=hashed_password,
-                summary=data.summary
+                password=hashed_password
             )
         else:
             await self.minio_service.save_large_text(
                 key=key,
-                text=data.text,
+                data=data,
                 creator=creator,
                 size=text_size,
-                ttl=data.ttl,
-                only_one_read=data.only_one_read,
-                password=hashed_password,
-                summary=data.summary
+                password=hashed_password
             )
 
         return TextCreateResponse(key=key)
@@ -110,24 +104,18 @@ class StorageService:
         if text_size < app_settings.SIZE_THRESHOLD:
             await self.redis_service.save_small_text(
                 key=key,
-                text=data.text,
+                data=data,
                 creator=creator,
                 size=text_size,
-                ttl=data.ttl,
-                only_one_read=data.only_one_read,
-                password=hashed_password,
-                summary=data.summary
+                password=hashed_password
             )
         else:
             await self.minio_service.save_large_text(
                 key=key,
-                text=data.text,
+                data=data,
                 creator=creator,
                 size=text_size,
-                ttl=data.ttl,
-                only_one_read=data.only_one_read,
-                password=hashed_password,
-                summary=data.summary
+                password=hashed_password
             )
 
         return True
@@ -136,10 +124,7 @@ class StorageService:
 
         redis_data = await self.redis_service.get_from_redis(key)
 
-        if not redis_data:
-            return False
-
-        if redis_data['creator'] != creator:
+        if not redis_data or redis_data['creator'] != creator:
             return False
 
         await self._delete_text_data(key, redis_data)
@@ -152,4 +137,3 @@ class StorageService:
 
         if 'link_text' in redis_data:
             await run_in_threadpool(self.minio_service.delete_from_minio, key)
-#потрібно створити екземпляр чи ні?

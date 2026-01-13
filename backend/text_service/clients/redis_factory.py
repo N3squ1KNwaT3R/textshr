@@ -1,5 +1,5 @@
 import redis.asyncio as redis
-from ..config import redis_settings
+from config import redis_settings
 
 
 def create_redis_client():

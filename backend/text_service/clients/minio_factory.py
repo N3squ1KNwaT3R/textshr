@@ -1,5 +1,5 @@
 from minio import Minio
-from ..config import minio_settings
+from config import minio_settings
 
 
 def create_minio_client() -> Minio:
