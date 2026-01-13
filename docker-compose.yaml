@@ -59,6 +59,18 @@ services:
       - "127.0.0.1:8005:8000"
     restart: unless-stopped
 
+  cleanup_service:
+    build: ./backend/cleanup_service/textshare-cleanup-service
+    image: cleanup_service
+    container_name: cleanup
+    depends_on:
+      - redis
+      - minio
+    env_file:
+      - .env
+    network_mode: host
+    restart: unless-stopped
+
 
 
   session_service:

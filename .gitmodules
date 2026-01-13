@@ -1,0 +1,3 @@
+[submodule "backend/cleanup_service/textshare-cleanup-service"]
+	path = backend/cleanup_service/textshare-cleanup-service
+	url = git@github.com:lilp1ka/textshare-cleanup-service.git
