@@ -1,7 +1,7 @@
 import json
 import pytest
 import unittest.mock
-from ..client.redis_client import RedisClient
+from client.redis_client import RedisClient
 
 
 @pytest.fixture
