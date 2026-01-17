@@ -6,6 +6,7 @@ from passlib.hash import bcrypt
 
 def generate_key(ttl: int) -> str:
     ttl_length_map = {600 : 4,
+                      30 : 3,
                       3600 : 5,
                       28800 : 6,
                       86400: 7

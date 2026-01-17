@@ -54,4 +54,4 @@ class RedisTextLarge(BaseModel):
     only_one_read: bool
     password: Optional[str] = None
     summary: Optional[str] = None
-    expiresAt: int  # timestamp + ttl
+    expiresAt: float  # timestamp + ttl
