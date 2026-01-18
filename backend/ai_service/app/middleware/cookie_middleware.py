@@ -1,9 +1,8 @@
-# middleware/session_middleware.py
 import logging
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from clients.session_redis_client import SessionRedisClient
+from app.clients.session_redis_client import SessionRedisClient
 
 logger = logging.getLogger(__name__)
 
