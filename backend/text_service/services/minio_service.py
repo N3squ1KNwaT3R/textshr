@@ -18,7 +18,7 @@ class MinioService:
         text_bytes = data.text.encode("utf-8")
         self.minio_client.set(key, text_bytes)
 
-        link = f"http://minio:9000/{self.minio_client.bucket}/{key}"
+        link = f"{key}"
         expires_at = float((time.time()) + data.ttl)*1000
 
         redis_data = RedisTextLarge(

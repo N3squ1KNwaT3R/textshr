@@ -17,36 +17,22 @@ class RedisClient:
     def __init__(self, client: redis.Redis = None):
         self.client = client or get_redis_client()
 
-    async def set(self, key: str, value: dict, ttl: Optional[int] = None):
-        data = json.dumps(value)
+    async def create_session(self, session_id: str, ttl: Optional[int] = None):
         try:
-            await self.client.set(name=key, value=data, ex=ttl)
-            logger.info(f"Redis set {key} -> {data}")
+            await self.client.set(name=session_id, value="active", ex=ttl)
+            logger.info(f"Session created: {session_id}")
         except Exception as e:
-            logger.error(f"Redis Set error key={key}: {e}")
-            raise Exception(f"Redis Set error key={key}: {e}")
+            logger.error(f"Redis session creation error {session_id}: {e}")
+            raise
 
-    async def get(self, key: str) -> Optional[dict]:
+    async def refresh_session(self, session_id: str, ttl: int):
+        logger.info(f"Refreshing session: {session_id} with new TTL: {ttl}")
         try:
-            data = await self.client.get(key)
-            if not data:
-                logger.warning(f"Redis get {key} -> Not found")
-                return None
-            logger.info(f"Redis get = {key}")
-            data = json.loads(data)
-            return data
+            await self.client.expire(session_id, ttl)
+            logger.info(f"✓ Session TTL updated: {session_id}")
         except Exception as e:
-            logger.error(f"Redis GET error key={key}: {e}")
-            raise Exception(f"Redis Get error key={key}: {e}")
-
-    async def delete(self, key: str):
-        try:
-            result = await self.client.delete(key)
-            logger.info(f"Redis Delete {key} -> {result}")
-            return result
-        except Exception as e:
-            logger.error(f"Redis Delete error key={key}: {e}")
-            raise Exception(f"Redis Delete error key={key}: {e}")
+            logger.error(f"✗ Failed to refresh session {session_id}: {e}", exc_info=True)
+            raise
 
     async def exists(self, key: str) -> bool:
         try:
@@ -57,9 +43,6 @@ class RedisClient:
             logger.error(f"Redis Exists error key={key}: {e}")
             raise Exception(f"Redis Exists error key={key}: {e}")
 
-    async def update(self, key: str, value: dict, ttl: Optional[int] = None):
-        await self.set(key, value, ttl)
-
     async def close(self):
         try:
             await self.client.close()
@@ -67,11 +50,4 @@ class RedisClient:
         except Exception as e:
             logger.error(f"Redis close error: {e}")
 
-    async def expire(self, key: str, ttl: int) -> bool:
-        try:
-            result = await self.client.expire(key, ttl)
-            logger.info(f"Redis expire {key} -> {ttl}")
-            return result
-        except Exception as e:
-            logger.error(f"Redis expire error: {e}")
-            return False
+redis_client = RedisClient()

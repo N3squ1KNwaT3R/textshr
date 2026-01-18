@@ -1,9 +1,18 @@
 from fastapi import FastAPI
-from routes.endpoints import router as session_router
+from api.session import session_router
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Session Service")
+app = FastAPI(title="Session service")
 app.include_router(session_router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/")
-def read_root():
-    return {"session_service": "active"}
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
