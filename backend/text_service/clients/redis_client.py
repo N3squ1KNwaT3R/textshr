@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Optional
 
@@ -86,11 +85,15 @@ class RedisClient:
     async def delete(self, key: str):
         try:
             exists = await self._exists(key)
-            if exists:
-                await self.redis.delete(key)
-                logger.info(f"DELETE key={key}")
-                return True
-            return False
+            if not exists:
+                return False
+
+            await self.redis.zrem("notes:expiry", key)
+
+            await self.redis.delete(key)
+
+            logger.info(f"DELETE key={key}")
+            return True
 
         except Exception as e:
             raise Exception(f"Redis DELETE error key={key}: {e}")
