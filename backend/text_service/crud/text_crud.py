@@ -50,7 +50,6 @@ async def update_text(data: TextUpdateRequest, key: str, request: Request):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Text not found or access denied"
         )
-    return {"success": True}
 
 
 @router_text.delete("/", status_code=status.HTTP_204_NO_CONTENT)
@@ -63,4 +62,3 @@ async def delete_text(key: str, request: Request):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Text not found or access denied"
         )
-    return {"success": True}
