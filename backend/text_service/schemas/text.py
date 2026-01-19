@@ -1,28 +1,57 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
-class TextBase(BaseModel):
-    link_text: str
-    creator: str
 
 
-class TextSmall(BaseModel):
+class TextCreateRequest(BaseModel):
+    text: str = Field(min_length=1)
+    ttl: int = Field(gt=0)
+    only_one_read: bool
+    password: Optional[str] = None
+    summary: Optional[str] = None
+
+
+class TextUpdateRequest(BaseModel):
+    text: str = Field(min_length=1)
+    ttl: int = Field(gt=0)
+    only_one_read: bool
+    password: Optional[str] = None
+    summary: Optional[str] = None
+
+
+class PasswordVerifyRequest(BaseModel):
+    password: str
+
+
+class TextCreateResponse(BaseModel):
+    key: str
+
+
+class PasswordRequiredResponse(BaseModel):
+    password_required: bool = True
+
+
+class TextGetResponse(BaseModel):
+    text: str
+    size: int
+    summary: Optional[str] = None
+
+
+# Redis shemas
+
+class RedisTextSmall(BaseModel):
     text: str
     creator: str
     size: int
-    onlyoneread: bool
+    only_one_read: bool
     password: Optional[str] = None
     summary: Optional[str] = None
 
 
-class TextLarge(BaseModel):
+class RedisTextLarge(BaseModel):
     link_text: str
     creator: str
     size: int
-    onlyoneread: bool
+    only_one_read: bool
     password: Optional[str] = None
     summary: Optional[str] = None
-    expiresAt: int    # timestamp + ttl
-
-class TestModel(BaseModel):
-    name: str
-    age: int
+    expiresAt: float  # timestamp + ttl

@@ -15,7 +15,6 @@ __pycache__/
 /frontend/.yarn/plugins
 /frontend/.yarn/releases
 /frontend/.yarn/versions
-.env
 
 # testing
 /frontend/coverage

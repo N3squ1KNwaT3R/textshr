@@ -11,4 +11,17 @@ class Settings(BaseSettings):
         env_file = ".env"
         extra = "ignore"
 
+class RedisSettings(BaseSettings):
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_DB: int
+    REDIS_PASSWORD: str
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
+
+redis_settings = RedisSettings()
+
 settings = Settings()
