@@ -2,23 +2,14 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { getDocument, saveDocument, verifyPassword, deleteDocument, TextDocument } from "@/lib/api";
-import { addToHistory, removeFromHistory } from "@/lib/history";
+import { getDocument, saveDocument, verifyPassword, deleteDocument } from "@/lib/api";
+import { addToHistory, removeFromHistory, checkIsOwner } from "@/lib/history"; 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { 
-  Loader2, Save, Copy, ArrowLeft, Lock, Unlock, 
-  Settings, Trash2, Clock, EyeOff, FileText 
-} from "lucide-react";
+import { Loader2, Save, Copy, ArrowLeft, Lock, Unlock, Settings, Trash2, Clock, EyeOff, FileText, Eye } from "lucide-react";
 
 export default function DocPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
@@ -28,9 +19,9 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isNew, setIsNew] = useState(false);
+  const [isOwner, setIsOwner] = useState(false); 
   const [isLocked, setIsLocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
-
   const [showSettings, setShowSettings] = useState(false);
   
   const [ttl, setTtl] = useState("86400");
@@ -45,15 +36,40 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
         
         if (doc) {
           if (doc.password_required) {
+            
+            const cachedPassword = sessionStorage.getItem(`pwd_${code}`);
+            if (cachedPassword) {
+                try {
+                    const unlockedDoc = await verifyPassword(code, cachedPassword);
+                    setContent(unlockedDoc.text || "");
+                    setSummary(unlockedDoc.summary || "");
+                    
+                    const amIOwner = checkIsOwner(code);
+                    setIsOwner(amIOwner);
+                    addToHistory(code, unlockedDoc.summary || "Unlocked", amIOwner);
+                    
+                    sessionStorage.removeItem(`pwd_${code}`);
+                    setLoading(false);
+                    return; 
+                } catch (e) {
+                    sessionStorage.removeItem(`pwd_${code}`);
+                }
+            }
+
             setIsLocked(true);
             setLoading(false);
             return;
           }
+
           setContent(doc.text || "");
           setSummary(doc.summary || "");
-          addToHistory(code, doc.summary || "Watched");
+          const amIOwner = checkIsOwner(code);
+          setIsOwner(amIOwner);
+          addToHistory(code, doc.summary || "Watched", amIOwner);
+
         } else {
           setIsNew(true);
+          setIsOwner(true); 
         }
       } catch (error) {
         toast.error("Error loading");
@@ -72,7 +88,11 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
         setContent(doc.text || "");
         setSummary(doc.summary || "");
         setIsLocked(false);
-        addToHistory(code, "Unlocked");
+        
+        const amIOwner = checkIsOwner(code);
+        setIsOwner(amIOwner);
+        
+        addToHistory(code, "Unlocked", amIOwner);
         toast.success("Access granted");
     } catch (e) {
         toast.error("Invalid password");
@@ -96,13 +116,14 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
 
       if (isNew && savedKey !== code) {
         removeFromHistory(code);
-        addToHistory(savedKey, summary || "Saved");
+        addToHistory(savedKey, summary || "Saved", true);
         router.replace(`/${savedKey}`);
       } else {
-        addToHistory(code, summary || "Saved");
+        addToHistory(code, summary || "Saved", true);
       }
       
       setIsNew(false);
+      setIsOwner(true);
       setShowSettings(false);
       
     } catch (e) {
@@ -113,8 +134,7 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this document? This action cannot be undone.")) return;
-    
+    if (!confirm("Are you sure you want to delete this document?")) return;
     setSaving(true);
     try {
       const success = await deleteDocument(code);
@@ -123,7 +143,7 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
         removeFromHistory(code);
         router.push("/");
       } else {
-        toast.error("Failed to delete (you are not the owner?)");
+        toast.error("Failed to delete");
       }
     } catch (e) {
       toast.error("Error deleting");
@@ -132,41 +152,45 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
     }
   };
 
+
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-neutral-950 text-white">
+     <div className="flex h-screen items-center justify-center bg-neutral-950 text-white">
       <Loader2 className="animate-spin w-10 h-10 text-blue-500" />
     </div>
   );
 
   if (isLocked) {
-    return (
+     return (
         <div className="flex h-screen items-center justify-center bg-neutral-950 text-white p-4">
-            <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+             <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 rounded-2xl p-8 text-center space-y-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
                 <div className="mx-auto w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center">
                     <Lock className="w-8 h-8 text-amber-500" />
                 </div>
                 <div>
                     <h1 className="text-2xl font-bold">Access restricted</h1>
-                    <p className="text-neutral-400 mt-2">Enter the password to view.</p>
+                    <p className="text-neutral-400 mt-2">Enter the password to view this document.</p>
                 </div>
-                <div className="space-y-3">
+                 <div className="space-y-3">
                     <Input 
                         type="password" 
                         placeholder="Password..." 
-                        className="bg-neutral-950 border-neutral-700 text-center h-12 text-lg"
+                        className="bg-neutral-950 border-neutral-700 text-center h-12 text-lg focus-visible:ring-amber-500"
                         value={passwordInput}
                         onChange={(e) => setPasswordInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+                        autoFocus
                     />
                     <Button onClick={handleUnlock} className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-lg">
                         <Unlock className="w-5 h-5 mr-2" /> Unlock
                     </Button>
                 </div>
-                <Button variant="ghost" onClick={() => router.push("/")}>To main page</Button>
-            </div>
+                <Button variant="ghost" onClick={() => router.push("/")}>Back to main page</Button>
+             </div>
         </div>
-    );
+     );
   }
+
+  const canEdit = isNew || isOwner;
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex flex-col relative">
@@ -179,17 +203,24 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
             <span className="font-mono text-blue-400 font-bold tracking-wider">{code}</span>
             {summary && <span className="text-xs text-neutral-500 max-w-[150px] truncate">{summary}</span>}
           </div>
+          {!canEdit && (
+            <span className="flex items-center gap-1 text-xs bg-neutral-800 text-neutral-400 px-2 py-1 rounded-full border border-neutral-700">
+                <Eye className="w-3 h-3" /> Read Only
+            </span>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
-            <Button 
-                variant={showSettings ? "secondary" : "ghost"} 
-                size="icon" 
-                onClick={() => setShowSettings(!showSettings)}
-                className={isNew ? "animate-pulse text-blue-400 bg-blue-900/20" : ""}
-            >
-                <Settings className="w-5 h-5" />
-            </Button>
+            {canEdit && (
+                <Button 
+                    variant={showSettings ? "secondary" : "ghost"} 
+                    size="icon" 
+                    onClick={() => setShowSettings(!showSettings)}
+                    className={isNew ? "animate-pulse text-blue-400 bg-blue-900/20" : ""}
+                >
+                    <Settings className="w-5 h-5" />
+                </Button>
+            )}
 
             <Button variant="secondary" onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
@@ -198,14 +229,16 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
                 <Copy className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Copy Link</span>
             </Button>
             
-            <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 min-w-[110px]">
-                {saving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                {isNew ? "Create" : "Save"}
-            </Button>
+            {canEdit && (
+                <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 min-w-[110px]">
+                    {saving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    {isNew ? "Create" : "Save"}
+                </Button>
+            )}
         </div>
       </header>
 
-      {showSettings && (
+      {showSettings && canEdit && (
         <div className="absolute top-[70px] right-4 w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl p-5 z-30 animate-in slide-in-from-top-2 fade-in duration-200">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-lg">Settings</h3>
@@ -217,7 +250,6 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
                     <label className="text-sm text-neutral-400 flex items-center gap-2">
                         <Clock className="w-4 h-4" /> Time to live (TTL)
                     </label>
-                    
                     <Select value={ttl} onValueChange={setTtl}>
                       <SelectTrigger className="w-full bg-neutral-950 border-neutral-800">
                         <SelectValue placeholder="Select TTL" />
@@ -229,7 +261,6 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
                         <SelectItem value="2592000">1 month</SelectItem>
                       </SelectContent>
                     </Select>
-
                 </div>
 
                 <div className="space-y-2">
@@ -270,6 +301,8 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
                   />
                 </div>
 
+                <hr className="border-neutral-800" />
+
                 {!isNew && (
                     <Button 
                         variant="destructive" 
@@ -287,8 +320,10 @@ export default function DocPage({ params }: { params: Promise<{ code: string }> 
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Write your text here..."
-          className="w-full h-[80vh] bg-transparent border-none resize-none focus:outline-none text-lg font-mono text-neutral-200 placeholder:text-neutral-700 leading-relaxed"
+          placeholder={canEdit ? "Write your text here..." : "This document is read-only."}
+          readOnly={!canEdit}
+          className={`w-full h-[80vh] bg-transparent border-none resize-none focus:outline-none text-lg font-mono leading-relaxed
+             ${!canEdit ? "text-neutral-400 cursor-default" : "text-neutral-200 placeholder:text-neutral-700"}`}
           spellCheck={false}
         />
       </main>

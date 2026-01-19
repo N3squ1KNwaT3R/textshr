@@ -13,11 +13,13 @@ import { FileText, ArrowRight, Clock, Trash2, Lock, Search, ShieldCheck, Loader2
 
 export default function Home() {
   const router = useRouter();
+  
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   const [inputCode, setInputCode] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  
   const [step, setStep] = useState<"enter-code" | "enter-password">("enter-code");
 
   useEffect(() => {
@@ -37,8 +39,7 @@ export default function Home() {
       const doc = await getDocument(inputCode.trim());
       
       if (!doc) {
-        toast.error("Document not found");
-        setLoading(false);
+        router.push(`/${inputCode.trim()}`);
         return;
       }
 
@@ -52,7 +53,7 @@ export default function Home() {
       router.push(`/${inputCode.trim()}`);
       
     } catch (error) {
-      toast.error("Error or document not found");
+      toast.error("Connection error");
       setLoading(false);
     }
   };
@@ -63,6 +64,8 @@ export default function Home() {
     
     try {
       await verifyPassword(inputCode.trim(), inputPassword);
+      sessionStorage.setItem(`pwd_${inputCode.trim()}`, inputPassword);
+      
       toast.success("Access granted");
       router.push(`/${inputCode.trim()}`);
     } catch (error) {
@@ -102,19 +105,18 @@ export default function Home() {
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-8 text-lg font-medium shadow-lg shadow-blue-900/20 transition-all hover:scale-[1.01]"
             >
                 <div className="flex flex-col items-start">
-                    <span className="flex items-center gap-2">Create note <ArrowRight className="w-5 h-5" /></span>
-                    <span className="text-xs font-normal opacity-80 text-blue-100">Markdown support</span>
+                    <span className="flex items-center gap-2">Create New Note <ArrowRight className="w-5 h-5" /></span>
                 </div>
             </Button>
 
             <div className="flex-1 flex flex-col min-h-0">
                 <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Clock className="w-3 h-3" /> Your recent notes
+                    <Clock className="w-3 h-3" /> Recent Notes
                 </h3>
                 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-2 max-h-[200px] scrollbar-thin scrollbar-thumb-neutral-800">
                     {history.length === 0 ? (
-                        <div className="text-neutral-600 text-sm italic py-4">Here will be your browsing history...</div>
+                        <div className="text-neutral-600 text-sm italic py-4">History is empty...</div>
                     ) : (
                         history.map((item) => (
                             <div 
@@ -124,7 +126,7 @@ export default function Home() {
                             >
                                 <div className="flex flex-col overflow-hidden">
                                     <span className="font-mono text-sm text-blue-400 font-bold tracking-wide">{item.key}</span>
-                                    <span className="text-xs text-neutral-500 truncate max-w-[200px]">{item.summary || "Without description"}</span>
+                                    <span className="text-xs text-neutral-500 truncate max-w-[200px]">{item.summary || "No description"}</span>
                                 </div>
                                 <button 
                                     onClick={(e) => handleDeleteHistory(item.key, e)}
@@ -140,65 +142,64 @@ export default function Home() {
           </div>
 
           <div className="hidden md:block bg-gradient-to-b from-transparent via-neutral-800 to-transparent w-[1px]" />
-          
           <div className="md:hidden bg-neutral-800 h-[1px] w-full" />
 
           <div className="p-8 bg-neutral-900/30 flex flex-col justify-center">
             
             <div className="max-w-xs mx-auto w-full space-y-6">
                 <div className="text-center space-y-2">
-                    <div className="mx-auto w-12 h-12 bg-neutral-800 rounded-2xl flex items-center justify-center mb-4">
+                    <div className="mx-auto w-12 h-12 bg-neutral-800 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500">
                         {step === "enter-code" ? (
                             <Search className="w-6 h-6 text-neutral-400" />
                         ) : (
-                            <Lock className="w-6 h-6 text-amber-500" />
+                            <Lock className="w-6 h-6 text-amber-500 animate-pulse" />
                         )}
                     </div>
-                    <h2 className="text-xl font-semibold">
-                        {step === "enter-code" ? "Open document" : "Enter password"}
+                    <h2 className="text-xl font-semibold transition-all">
+                        {step === "enter-code" ? "Open Document" : "Enter Password"}
                     </h2>
-                    <p className="text-sm text-neutral-400">
+                    <p className="text-sm text-neutral-400 transition-all">
                         {step === "enter-code" 
-                            ? "Enter the code or link to access." 
-                            : "This note is protected. Enter the password to access."}
+                            ? "Enter code or link to access." 
+                            : "This note is protected."}
                     </p>
                 </div>
 
                 <div className="space-y-3">
                     {step === "enter-code" ? (
-                        <>
+                        <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                              <Input 
-                                placeholder="Example: qWertY" 
+                                placeholder="e.g. qWertY" 
                                 className="bg-neutral-950 border-neutral-700 text-center text-lg tracking-widest font-mono h-12 focus-visible:ring-blue-600"
                                 value={inputCode}
-                                onChange={(e: { target: { value: string; }; }) => setCode(e.target.value)}
-                                onPaste={(e: { preventDefault: () => void; clipboardData: { getData: (arg0: string) => any; }; }) => {
+                                onChange={(e) => setInputCode(e.target.value)}
+                                onPaste={(e) => {
                                     e.preventDefault();
                                     const text = e.clipboardData.getData('text');
                                     const parts = text.split('/');
                                     const code = parts[parts.length - 1];
                                     setInputCode(code);
                                 }}
-                                onKeyDown={(e: { key: string; }) => e.key === 'Enter' && handleCheckCode()}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCheckCode()}
                             />
                             <Button 
-                                className="w-full bg-neutral-800 hover:bg-neutral-700 h-12"
+                                className="w-full bg-neutral-800 hover:bg-neutral-700 h-12 transition-all"
                                 onClick={handleCheckCode}
                                 disabled={loading || !inputCode}
                             >
-                                {loading ? <Loader2 className="animate-spin" /> : "Find"}
+                                {loading ? <Loader2 className="animate-spin" /> : "Find Note"}
                             </Button>
-                        </>
+                        </div>
                     ) : (
-                        <>
+                        <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                              <Input 
                                 type="password"
                                 placeholder="••••••" 
                                 className="bg-neutral-950 border-amber-900/50 text-center text-lg h-12 focus-visible:ring-amber-500"
                                 value={inputPassword}
-                                onChange={(e: { target: { value: string; }; }) => setPassword(e.target.value)}
+                                onChange={(e) => setInputPassword(e.target.value)}
                                 autoFocus
-                                onKeyDown={(e: { key: string; }) => e.key === 'Enter' && handleVerifyPassword()}
+                                onKeyDown={(e) => e.key === 'Enter' && handleVerifyPassword()}
                             />
                             <div className="grid grid-cols-2 gap-3">
                                 <Button 
@@ -216,10 +217,10 @@ export default function Home() {
                                     onClick={handleVerifyPassword}
                                     disabled={loading}
                                 >
-                                    {loading ? <Loader2 className="animate-spin" /> : "Open"}
+                                    {loading ? <Loader2 className="animate-spin" /> : "Unlock"}
                                 </Button>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
@@ -229,7 +230,4 @@ export default function Home() {
       </div>
     </main>
   );
-  
-  function setCode(val: string) { setInputCode(val); }
-  function setPassword(val: string) { setInputPassword(val); }
 }
