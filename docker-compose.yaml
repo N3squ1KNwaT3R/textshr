@@ -18,7 +18,7 @@ services:
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
-      - "33621:33621"
+      - "9001:9001"
     restart: unless-stopped
     env_file:
       - .env
@@ -43,6 +43,7 @@ services:
     build: ./backend/text_service
     image: text_service
     container_name: text
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --root-path /text
     depends_on:
       - redis
       - minio
@@ -68,6 +69,7 @@ services:
     build: ./backend/session_service
     image: session_service
     container_name: session
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --root-path /session
     depends_on:
       - redis
     ports:
@@ -80,6 +82,7 @@ services:
     build: ./backend/ai_service
     image: ai_service
     container_name: ai
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --root-path /ai
     depends_on:
       - redis
     ports:
