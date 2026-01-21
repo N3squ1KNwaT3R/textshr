@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
 import { getHistory, removeFromHistory, HistoryItem } from "@/lib/history";
-import { getDocument, verifyPassword } from "@/lib/api";
+import { getText, verifyPassword } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,14 +21,20 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   
   const [step, setStep] = useState<"enter-code" | "enter-password">("enter-code");
-
-  useEffect(() => {
+ const updateHistory = () => {
     setHistory(getHistory());
+  };
+  useEffect(() => {
+    updateHistory()
+    window.addEventListener("history-change", updateHistory);
+    return () => {
+      window.removeEventListener("history-change", updateHistory);
+    };
   }, []);
 
   const createNewDoc = () => {
     const id = nanoid(6);
-    router.push(`/${id}`);
+    router.push(`/new`);
   };
 
   const handleCheckCode = async () => {
@@ -36,7 +42,7 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const doc = await getDocument(inputCode.trim());
+      const doc = await getText(inputCode.trim());
       
       if (!doc) {
         router.push(`/${inputCode.trim()}`);
@@ -76,8 +82,8 @@ export default function Home() {
 
   const handleDeleteHistory = (key: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newHistory = removeFromHistory(key);
-    if (newHistory) setHistory(newHistory);
+    removeFromHistory(key);
+    updateHistory();
   };
 
   return (

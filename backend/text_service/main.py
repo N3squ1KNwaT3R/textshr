@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Text Service", version="1.0.0")
 
 # Підключаємо роутер з префіксом
-app.include_router(router_text, prefix="/text", tags=["text"])
+app.include_router(router_text, prefix="/api/text", tags=["text"])
 
 # Підключаємо SessionMiddleware з публічними методами
 app.add_middleware(
@@ -18,8 +18,9 @@ app.add_middleware(
     session_redis=session_redis_client,
     exclude_paths=["/docs", "/openapi.json", "/redoc", "/health"],
     public_methods={
-        "/text/": ["GET"],        # GET /text/?key=xxx без cookie
-        "/text/verify": ["POST"]  # POST /text/verify без cookie (якщо потрібно)
+        # ВАЖЛИВО: Вказуємо повний шлях разом з /api
+        "/api/text/": ["GET"],        
+        "/api/text/verify": ["POST"]  
     }
 )
 
