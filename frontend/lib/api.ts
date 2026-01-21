@@ -1,113 +1,129 @@
-export interface TextDocument {
+import { ensureSession } from "./session-api";
+
+const TEXT_API = "/api/text";
+
+export type TextDocument = {
   text: string;
   size?: number;
   summary?: string;
   password_required?: boolean;
-}
+};
 
-interface CreateResponse {
-  key: string;
-  status: string;
-}
-export interface SaveOptions {
+export type SaveTextOptions = {
   text: string;
-  ttl: number;
+  ttl?: number;
+  only_one_read?: boolean;
   password?: string;
-  only_one_read: boolean; 
   summary?: string;
-}
+};
 
-const API_BASE = "/api/text"; 
 
-export async function getDocument(key: string): Promise<TextDocument | null> {
-  const params = new URLSearchParams({ key });
-  
-  const res = await fetch(`${API_BASE}/?${params}`, {
-    method: "GET",
+export async function createText(options: SaveTextOptions): Promise<{ key: string }> {
+  await ensureSession();
+
+  const backendBody = {
+    text: options.text,
+    ttl: options.ttl || 3600,
+    only_one_read: options.only_one_read ?? false, 
+    password: options.password || "",
+    summary: options.summary || ""
+  };
+
+  const res = await fetch(`${TEXT_API}/`, {
+    method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    credentials: "include", 
+    body: JSON.stringify(backendBody),
   });
 
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error("Failed to fetch");
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("Create Text Error:", err);
+    throw new Error("Failed to create text");
+  }
 
   return res.json();
 }
 
-export async function verifyPassword(key: string, password: string): Promise<TextDocument> {
-  const params = new URLSearchParams({ key });
-  
-  const res = await fetch(`${API_BASE}/verify?${params}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+export async function updateText(
+  key: string,
+  options: SaveTextOptions
+): Promise<{ key: string }> {
+  await ensureSession();
+
+  const backendBody = {
+    text: options.text,
+    ttl: options.ttl || 3600,
+    only_one_read: options.only_one_read ?? false,
+    password: options.password || "",
+    summary: options.summary || ""
+  };
+
+  const res = await fetch(`${TEXT_API}/?key=${key}`, {
+    method: "PUT",
     credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(backendBody),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to update text");
+  }
+
+  return { key };
+}
+
+export async function getText(key: string): Promise<TextDocument> {
+  await ensureSession();
+
+  const res = await fetch(`${TEXT_API}/?key=${key}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (res.status === 404) {
+    throw new Error("Text not found");
+  }
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch text");
+  }
+
+  return res.json();
+}
+
+
+export async function verifyPassword(
+  key: string,
+  password: string
+): Promise<TextDocument> {
+  await ensureSession();
+
+  const res = await fetch(`/api/text/verify?key=${key}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ password }),
   });
 
-  if (res.status === 403) {
+  if (res.status === 403 || res.status === 401) {
     throw new Error("Wrong password");
   }
 
   if (!res.ok) {
-    throw new Error("Verification error");
+    throw new Error("Verification failed");
   }
 
   return res.json();
 }
 
 export async function deleteDocument(key: string): Promise<boolean> {
-  const params = new URLSearchParams({ key });
-  
-  const res = await fetch(`${API_BASE}/?${params}`, {
+  await ensureSession();
+
+  const res = await fetch(`${TEXT_API}/?key=${key}`, {
     method: "DELETE",
-    credentials: "include", 
+    credentials: "include",
   });
 
   return res.status === 204;
-}
-
-
-export async function saveDocument(
-  options: SaveOptions,
-  currentKey?: string,
-  isNew: boolean = true
-): Promise<string> {
-  const bodyData = JSON.stringify({
-    text: options.text,
-    ttl: Number(options.ttl),
-    only_one_read: options.only_one_read,
-    password: options.password || undefined,
-    summary: options.summary || undefined
-  });
-
-  if (isNew) {
-    const res = await fetch(`${API_BASE}/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include", 
-      body: bodyData,
-    });
-
-    if (!res.ok) {
-        throw new Error("Failed to create");
-    }
-    
-    const data = await res.json();
-    return data.key;
-  } 
-  else if (currentKey) {
-    const params = new URLSearchParams({ key: currentKey });
-    
-    await fetch(`${API_BASE}/?${params}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: bodyData,
-    });
-    
-    return currentKey;
-  }
-  
-  throw new Error("Invalid save state");
 }

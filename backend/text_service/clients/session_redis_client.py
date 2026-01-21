@@ -22,9 +22,11 @@ class SessionRedisClient:
     async def exists(self, session_id: str) -> bool:
         """Перевіряє чи існує сесія в Redis"""
         try:
-            # ВАЖЛИВО: Додаємо prefix "session:"
-            key = f"session:{session_id}"
+            key = session_id 
+            
+
             exists = await self.client.exists(key)
+            
             logger.info(f"Session exists check: {key} -> {bool(exists)}")
             return bool(exists)
         except redis.AuthenticationError as e:

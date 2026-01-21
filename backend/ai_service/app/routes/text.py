@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from app.services.text_service import TextService
 from functools import lru_cache
 
-router = APIRouter(prefix="/v1/text", tags=["Text AI"])
+router = APIRouter(prefix="/api/v1/text", tags=["Text AI"])
 
 class TextRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -26,6 +26,7 @@ async def text_correction(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"!!! OPENAI ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail="AI processing failed")
     
 @router.post("/text_summarization", status_code=status.HTTP_200_OK)

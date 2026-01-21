@@ -1,5 +1,4 @@
 services:
-
   redis:
     image: redis:latest
     volumes:
@@ -10,6 +9,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    networks:
+      - app_net
 
   minio:
     image: minio/minio:latest
@@ -22,6 +23,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    networks:
+      - app_net
 
   nginx:
     build:
@@ -38,20 +41,62 @@ services:
       - ai_service
       - session_service
     restart: unless-stopped
+    networks:
+      - app_net
 
   text_service:
     build: ./backend/text_service
     image: text_service
     container_name: text
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --root-path /text
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     depends_on:
       - redis
       - minio
     ports:
-      - "127.0.0.1:8005:8000"
+      - "8005:8000"
+    restart: unless-stopped
+    volumes:
+      - ./backend/text_service:/app
+    environment:
+      - "REDIS_PREFIX=session:"
+      - "SESSION_PREFIX=session:"
+      - "SESSION_KEY_PREFIX=session:"
+    env_file:
+      - .env
+    networks:
+      - app_net
+
+  session_service:
+    build: ./backend/session_service
+    image: session_service
+    container_name: session
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - redis
+    ports:
+      - "8003:8000"
     restart: unless-stopped
     env_file:
       - .env
+    networks:
+      - app_net
+
+  ai_service:
+    build: ./backend/ai_service
+    image: ai_service
+    container_name: ai
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - redis
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8006:8000"
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - app_net
 
   cleanup_service:
     build: ./backend/cleanup_service/textshare-cleanup-service
@@ -60,37 +105,38 @@ services:
     depends_on:
       - redis
       - minio
-    network_mode: host
     restart: unless-stopped
     env_file:
       - .env
+    networks:
+      - app_net
 
-  session_service:
-    build: ./backend/session_service
-    image: session_service
-    container_name: session
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --root-path /session
-    depends_on:
-      - redis
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: frontend
+    container_name: frontend
     ports:
-      - "127.0.0.1:8003:8000"
+      - "3000:3000"
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     restart: unless-stopped
     env_file:
       - .env
-
-  ai_service:
-    build: ./backend/ai_service
-    image: ai_service
-    container_name: ai
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --root-path /ai
     depends_on:
-      - redis
-    ports:
-      - "127.0.0.1:8006:8000"
-    restart: unless-stopped
-    env_file:
-      - .env
+      - text_service
+      - session_service
+    networks:
+      - app_net
 
 volumes:
   redis_data:
   minio_data:
+
+networks:
+  app_net:
+    driver: bridge
